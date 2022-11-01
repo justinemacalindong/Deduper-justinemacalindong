@@ -58,12 +58,14 @@ def reverse_complement(seq: str) -> str:
     return "".join(complement[i] for i in reversed(seq))
 
 def strand_flag(flag: str) -> str:
+    '''This function takes a a bitwise flag and returns its strandedness.'''
     if ((flag & 16) == 16):
 	    return "-"
     else:
         return "+"
 
 def position_adjust(pos: int,cigar: str,strand: str) -> int:
+    '''This function adjusts position based on cigar string and strandedness.'''
     if strand == "+":
         soft = re.findall(r'^([0-9]+)S', cigar)
         if soft:
