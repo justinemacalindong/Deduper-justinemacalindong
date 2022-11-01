@@ -1,0 +1,154 @@
+Deduper - Lab Notebook - Justine Macalindong
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+October 6th, 2022 - Pseudocode assigned
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+Collaboration: Justine Macalindong
+
+Notes from Leslie's lecture:
+
+- What does a PCR-duplicate look like?
+	- Same alignment position
+		- Chromosome
+		- Position
+		- Strand (strand specific?)
+			- SAM files 5' -> 3' 
+	- How do we determine these?
+		- Alignment section of the SAM File
+		- RNAME - column 3 - reference sequence name
+		- POS -  column 4 - position
+		- FLAG - column 2 - strand
+			- if ((flag & 4) == 4):
+				- mapped = False
+			- if ((flag & 16) == 16):
+				- rev_comp = True
+				- To know which strand sequence aligned to
+	- Soft clipping - either end not aligned to the genome
+		- why would something be soft clipped?
+			- sequence error/heterozygosity
+			- over-penalizing indels
+			- splicing with just a few nucleotides in an exon
+			- novel splicing
+		- only occurs on the ends
+		- How do you know if your sequence was soft clipped?
+			- The CIGAR string
+	- Same Unique Molecular Index (UMI or "randomer")
+	- Single-end vs Paired-end?
+		- More data from paired-end, but writing algorithm for single-end
+
+Proposed algorithm: 
+- given a SAM file of uniquely mapped reads, remove all PCR duplicates (retain only a single copy of each)
+- Samtools sort
+- Adjust for soft clipping
+- Single-end reads
+- Known UMIs
+- Considerations:
+	- millions of reads - avoid loading everything into memory
+	- be sure to utilize functions
+	- appropriately comment code and include doc strings
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+October 11th, 2022
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+Collaboration: Justine Macalindong and Jack Peplinski
+
+Visited Leslie in her office and she gave Jack and I a review to help us start our pseudocode for deduper. 
+
+Key take aways from her "talk":
+- High-level functions:
+    - Adjusted base position function
+    - Function to check strandedness
+- How to tell if records are duplicates:
+    - Same:
+        - Chromosome number
+        - ADJUSTED base position
+        - Strand
+        - UMI
+    - Store all four in a tuple and add to a set
+- Write out the first "unique" read
+- How to find adjusted base position
+    - Plus strand:
+        - Subtract S if on the left side
+        - Do not factor in insertions, deletions, Ns, or Ms 
+    - Minus strand:
+        - Add Ms
+        - Add Ds 
+        - Add Ns
+        - Do not factor in S if on the left side
+
+Pseudocode stored in ./part1/pseudocode.md
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+October 16th, 2022 - Deduper Peer Reviews
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+Collaboration: Justine Macalindong
+
+I had to peer review Isis, James, and Bea's pseudocode for deduper. I thought this assignment was super helpful, but it made me realize that I forgot
+to consider one very important step: Checking if the UMI is in the UMI list! 
+
+Other comments that I got from Christian, Skuppy, and Bea were that my set list may get too big. I also have to split my first column to find the
+UMI. 
+
+Thanks Christian, Skuppy, and Bea! 
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+October 26th, 2022 - Starting deduper
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+Collaboration: Justine Macalindong
+
+Finally starting my code for deduper! 
+
+I think my code will be structured pretty similar to demultiplex, so I'm going to start it out the way I started demux. 
+
+I created a set of known UMIs to check if the UMI in the read is of the desired UMIs. 
+
+I created a while True loop to read the sam file one line at a time. 
+
+This is the order of steps I have decided to taken in my code:
+1) Write out the header lines.
+2) If line starts with N split the line
+3) Extract the umi and check if it's in the set 
+	- if not, unknown_count += 1
+4) Assign chromosome, strand, position, and cigar string to variables using indexing
+5) Create a tuple of (chromsome, strand, position, and UMI)
+6) If tuple is not in the dedupe set, write to file
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+October 27th, 2022
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+Collaboration: Justine Macalindong
+
+Working on writing by adjusted position function.
+
+If plus strand:
+- Use regex to find anything that starts with [0-9]S 
+	- ^([0-9]+)S
+- Add the numbers to the current position
+
+If minus strand:
+- Use regex to find anything that is [0-9]D, [0-9]M, [0-9]N, and [0-9]S if it's at the end
+	- ([0-9])D, ([0-9])M, ([0-9])N, ([0-9])S$
+	- There can be multiple D, M, and Ns
+		- add together to get a total D, M, and N
+- Add the numbers to the current position
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+October 31st, 2022
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+Collaboration: Justine Macalindong, James Carr, and Jack Peplinski
+
+Ran my deduper script on the large file and compared my number to James and Jack. We all had different numbers but somewhat similar and around
+13 million unique reads. 
+
+Realized that my adjusted position function however was not working correctly because I was adding the soft clipping instead of subtracting on
+the plus side. 
+
+Fixed it and got a new set of counts. Looks like it should be working correctly now. 
+
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+November 1st, 2022 - Deduper submitted
+-----------------------------------------------------------------------------------------------------------------------------------------------------
+Collaboration: Justine Macalindong 
+
+Jacob and SJ's numbers match mine! I'm submitting!
+
+Script stored in macalindong_deduper.py
