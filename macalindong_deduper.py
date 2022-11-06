@@ -39,9 +39,13 @@ while True:
     # Writing out header lines
     if line.startswith("@"):
         out.write(str(line) + '\n')
+
+    # If line is empty, break from loop
+    elif line == "":
+        break
     
     # Checking for duplicates
-    elif line.startswith("N"): 
+    else: 
         line = line.split("\t")
         umi = line[0].split(":")[7]
 
@@ -61,9 +65,6 @@ while True:
 
         else:
             unknown_umis += 1
-            
-    else:
-        break
 
 print("Number of duplicates: " + str(duplicate_count))
 print("Number of unknown UMIs: " + str(unknown_umis))
