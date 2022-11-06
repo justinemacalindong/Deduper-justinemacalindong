@@ -13,41 +13,55 @@ def get_args():
 
 args = get_args()
 
+# Opening files
 sam = open(args.file,"r")
 known_umis =  open(args.umi, "r")
 out = open(args.outfile, "w")
 
-known = set()
+# Creating set of known umis
+known = set() 
 for line in known_umis: 
     line = line.strip()
     known.add(line) 
 
+# Initializing set to store unique reads
 dedupe_set = set()
 
+# Initializing counters
 duplicate_count = 0
 unknown_umis = 0
 unique_reads = 0
 
 while True:
+    # Reading one line at a time
     line = sam.readline().strip()
+
+    # Writing out header lines
     if line.startswith("@"):
         out.write(str(line) + '\n')
-    elif line.startswith("N"):
+    
+    # Checking for duplicates
+    elif line.startswith("N"): 
         line = line.split("\t")
         umi = line[0].split(":")[7]
-        if umi in known: 
-            chrom = line[2]
-            strand = bioinfo.strand_flag(int(line[1]))
-            cigar = line[5]
-            pos = bioinfo.position_adjust(int(line[3]),cigar,strand)
+
+        if umi in known: # Checking if UMI is part of the known set of UMIs
+            chrom = line[2] # Chromosome number
+            strand = bioinfo.strand_flag(int(line[1])) # Strandedness
+            cigar = line[5] # Cigar string
+            pos = bioinfo.position_adjust(int(line[3]),cigar,strand) # Adjusted position
+
+            # Checking if read is unique or a duplicate
             if (umi, chrom, pos, strand) not in dedupe_set:
                 dedupe_set.add((umi, chrom, pos, strand))
                 out.write('\t'.join(line) + '\n')
                 unique_reads += 1
             else:
                 duplicate_count += 1
+
         else:
             unknown_umis += 1
+            
     else:
         break
 
